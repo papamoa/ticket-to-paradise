@@ -29,26 +29,58 @@
   .board-wrap{
     max-width: 1020px;
     margin: 0 auto;
-    padding: 32px 18px 60px;
+    padding: 28px 18px 60px;
+  }
+
+  .header-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 14px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .badge{
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--amber);
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .badge .line2{
+    display:block;
+    color: var(--label);
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-top: 2px;
   }
 
   .logo-lockup{
     text-align: center;
-    margin-bottom: 18px;
+    flex: 1;
+    min-width: 0;
   }
   .logo-s30{
     font-family:'Archivo Black', sans-serif;
-    font-size: clamp(30px, 7vw, 56px);
+    font-size: clamp(22px, 5vw, 40px);
     color: var(--white);
     letter-spacing: 1px;
     display:flex;
     align-items:center;
     justify-content:center;
-    gap: 10px;
+    gap: 8px;
+    line-height: 1;
   }
   .palm-badge{
-    width: 0.85em;
-    height: 0.85em;
+    width: 0.8em;
+    height: 0.8em;
     border-radius: 50%;
     background: var(--amber);
     display:inline-flex;
@@ -60,19 +92,27 @@
   .logo-ticket{
     font-family:'IBM Plex Mono', monospace;
     font-weight: 600;
-    font-size: clamp(11px, 1.6vw, 15px);
-    letter-spacing: 4px;
+    font-size: clamp(9px, 1.3vw, 12px);
+    letter-spacing: 3px;
     color: var(--white);
     text-transform: uppercase;
-    margin: 6px 0;
+    margin: 4px 0;
   }
   .logo-paradise{
     font-family:'Archivo Black', sans-serif;
-    font-size: clamp(38px, 9vw, 76px);
+    font-size: clamp(26px, 6.5vw, 52px);
     line-height: 1;
     color: var(--amber);
     letter-spacing: 1px;
     text-transform: uppercase;
+  }
+  .logo-departures{
+    font-family:'Archivo Black', sans-serif;
+    font-size: clamp(12px, 2vw, 16px);
+    letter-spacing: 5px;
+    color: var(--white);
+    text-transform: uppercase;
+    margin-top: 6px;
   }
 
   .top-bar{
@@ -82,6 +122,7 @@
     border-bottom: 2px solid var(--hairline);
     padding-bottom: 14px;
     margin-bottom: 18px;
+    margin-top: 18px;
     flex-wrap: wrap;
     gap: 12px;
   }
@@ -268,6 +309,11 @@
   }
   .msg-state a{ color: var(--amber); }
 
+  @media (max-width: 700px){
+    .header-row{ flex-direction: column; }
+    .badge{ order: 2; }
+    .logo-lockup{ order: 1; }
+  }
   @media (max-width: 560px){
     .col-heads, .row{ grid-template-columns: 44px 1fr 70px 0; }
     .col-heads span:nth-child(4), .row .status-cell{ display:none; }
@@ -279,10 +325,15 @@
 <body>
 
 <div class="board-wrap">
-  <div class="logo-lockup">
-    <div class="logo-s30">S30 <span class="palm-badge">🌴</span></div>
-    <div class="logo-ticket">— Ticket to —</div>
-    <div class="logo-paradise">Paradise</div>
+  <div class="header-row">
+    <div class="badge">WEEK 1<span class="line2">CHALLENGES</span></div>
+    <div class="logo-lockup">
+      <div class="logo-s30">S30 <span class="palm-badge">🌴</span></div>
+      <div class="logo-ticket">— Ticket to —</div>
+      <div class="logo-paradise">Paradise</div>
+      <div class="logo-departures">Departures</div>
+    </div>
+    <div class="badge">76-WEEK<span class="line2">CHALLENGE</span></div>
   </div>
 
   <div class="top-bar">
@@ -481,3 +532,4 @@ setInterval(fetchData, REFRESH_MS);
 </script>
 </body>
 </html>
+
