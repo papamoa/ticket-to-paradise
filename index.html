@@ -326,6 +326,553 @@
 
 <div class="board-wrap">
   <div class="header-row">
+    <div class="badge"><span id="week-num">WEEK 1</span><span class="line2">CHALLENGES</span></div>
+    <div class="logo-lockup">
+      <div class="logo-s30">S30 <span class="palm-badge">🌴</span></div>
+      <div class="logo-ticket">— Ticket to —</div>
+      <div class="logo-paradise">Paradise</div>
+      <div class="logo-departures">Departures</div>
+    </div>
+    <div class="badge">ONGOING<span class="line2">CHALLENGES</span></div>
+  </div>
+
+  <div class="top-bar">
+    <div class="destination-line">Destination: <span class="place">Paradise 🌴</span></div>
+    <div class="status-cluster">
+      <div class="status-item">
+        <div class="k">Local Time</div>
+        <div class="v" id="clock">--:--:--</div>
+      </div>
+      <div class="status-item">
+        <div class="k"><span class="go-dot"></span>Feed</div>
+        <div class="v" id="feed-state" style="font-size:14px;">LIVE</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="board-panel">
+    <div class="col-heads">
+      <span>Rank</span>
+      <span>Passenger</span>
+      <span>Entries</span>
+      <span>Status</span>
+    </div>
+    <div class="rows" id="rows">
+      <div class="msg-state">Loading schedule…</div>
+    </div>
+    <div class="qualified-bar" id="qualified-line"></div>
+    <div class="footer-bar">
+      <span id="summary">— members · — entries in the draw</span>
+      <span id="updated">Last updated —</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = "1Ajgxgi9U-crw04Fkdk40G7wWCbq2_wV-7I3RFCyTybQ";
+const SHEET_NAME = "Ticket 2 Paradise";
+const SHEET_GID = "990596303";
+const CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
+                "/gviz/tq?tqx=out:csv&gid=" + SHEET_GID;
+const REFRESH_MS = 30000;
+const QUALIFY_THRESHOLD = 15;
+const CHALLENGE_START = new Date(2026, 6, 27); // 27 July 2026, Week 1 Monday
+const TOTAL_WEEKS = 76;
+
+function updateWeekBadge(){
+  const now = new Date();
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const diff = now - CHALLENGE_START;
+  let weekNum = diff < 0 ? 1 : Math.floor(diff / msPerWeek) + 1;
+  if (weekNum > TOTAL_WEEKS) weekNum = TOTAL_WEEKS;
+  document.getElementById("week-num").textContent = "WEEK " + weekNum;
+}
+
+let lastSignature = "";
+
+function parseCSV(text){
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (inQuotes){
+      if (c === '"'){
+        if (text[i+1] === '"'){ field += '"'; i++; }
+        else { inQuotes = false; }
+      } else { field += c; }
+    } else {
+      if (c === '"'){ inQuotes = true; }
+      else if (c === ','){ row.push(field); field = ""; }
+      else if (c === '\n' || c === '\r'){
+        if (c === '\r' && text[i+1] === '\n') i++;
+        row.push(field); rows.push(row); row = []; field = "";
+      } else { field += c; }
+    }
+  }
+  if (field.length || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r => r.some(cell => cell.trim() !== ""));
+}
+
+function statusFor(entryCount){
+  const isSunday = new Date().getDay() === 0;
+  if (isSunday) return {label:"Boarding", cls:"status-boarding"};
+  if (entryCount >= QUALIFY_THRESHOLD) return {label:"Qualified", cls:"status-qualified"};
+  return {label:"Gate Open", cls:"status-open"};
+}
+
+function makeFlapCell(text, opts){
+  opts = opts || {};
+  const wrap = document.createElement("div");
+  wrap.className = "flap-cell" + (opts.right ? " right" : "");
+  const chars = String(text).split("");
+  chars.forEach((ch, idx) => {
+    const cell = document.createElement("div");
+    cell.className = "flap-char" + (opts.wide === false ? " wide" : "");
+    const face = document.createElement("div");
+    face.className = "face";
+    face.textContent = ch === " " ? "\u00A0" : ch;
+    face.style.animationDelay = (idx * 18 + (opts.rowDelay || 0)) + "ms";
+    cell.appendChild(face);
+    wrap.appendChild(cell);
+  });
+  return wrap;
+}
+
+function pad(str, len){
+  str = String(str).toUpperCase();
+  if (str.length >= len) return str.slice(0, len);
+  return str + " ".repeat(len - str.length);
+}
+function padNum(n, len){
+  return String(n).padStart(len, "0");
+}
+
+function render(entries){
+  const rowsEl = document.getElementById("rows");
+  rowsEl.innerHTML = "";
+
+  if (!entries.length){
+    rowsEl.innerHTML = '<div class="msg-state">No entries logged yet — check back once the first entries are added.</div>';
+  }
+
+  entries.forEach((e, i) => {
+    const rank = i + 1;
+    const rowDelay = i * 40;
+    const rowEl = document.createElement("div");
+    rowEl.className = "row" + (rank === 1 ? " rank-1" : "");
+
+    rowEl.appendChild(makeFlapCell(padNum(rank, 3), {wide:false, rowDelay}));
+    rowEl.appendChild(makeFlapCell(pad(e.name, 20), {rowDelay}));
+    rowEl.appendChild(makeFlapCell(padNum(e.entries, 4), {right:true, wide:false, rowDelay}));
+
+    const st = statusFor(e.entries);
+    const statusCell = document.createElement("div");
+    statusCell.className = "status-cell";
+    const pill = document.createElement("span");
+    pill.className = "status-pill " + st.cls;
+    pill.textContent = st.label;
+    pill.style.animationDelay = rowDelay + "ms";
+    statusCell.appendChild(pill);
+    rowEl.appendChild(statusCell);
+
+    rowsEl.appendChild(rowEl);
+  });
+
+  const totalEntries = entries.reduce((sum, e) => sum + e.entries, 0);
+  const qualifiedCount = entries.filter(e => e.entries >= QUALIFY_THRESHOLD).length;
+
+  document.getElementById("summary").textContent =
+    entries.length + " members · " + totalEntries + " entries in the draw";
+  document.getElementById("updated").textContent =
+    "Last updated " + new Date().toLocaleTimeString();
+  document.getElementById("qualified-line").textContent =
+    qualifiedCount + " of " + entries.length + " members have qualified with " + QUALIFY_THRESHOLD + "+ entries";
+}
+
+async function fetchData(){
+  try{
+    const res = await fetch(CSV_URL, {cache:"no-store"});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    const rows = parseCSV(text);
+
+    let dataRows = rows;
+    const maybeHeader = rows[0];
+    if (maybeHeader && isNaN(parseFloat(maybeHeader[1]))){
+      dataRows = rows.slice(1);
+    }
+
+    const entries = dataRows
+      .map(r => ({
+        name: (r[0] || "").trim(),
+        entries: parseInt((r[1] || "0").replace(/[^0-9.-]/g, ""), 10) || 0
+      }))
+      .filter(e => e.name.length > 0)
+      .sort((a, b) => b.entries - a.entries);
+
+    const signature = JSON.stringify(entries);
+    document.getElementById("feed-state").textContent = "LIVE";
+    document.getElementById("feed-state").style.color = "var(--go)";
+
+    if (signature !== lastSignature){
+      lastSignature = signature;
+      render(entries);
+    }
+  } catch (err){
+    document.getElementById("feed-state").textContent = "OFFLINE";
+    document.getElementById("feed-state").style.color = "var(--alert)";
+    const rowsEl = document.getElementById("rows");
+    if (!lastSignature){
+      rowsEl.innerHTML =
+        '<div class="msg-state"><div class="big">SCHEDULE UNAVAILABLE</div>' +
+        'Could not reach the sheet. Make sure "Trial System of God" is shared as ' +
+        '"Anyone with the link can view", and that the tab is named exactly "' +
+        SHEET_NAME + '".</div>';
+    }
+  }
+}
+
+function tickClock(){
+  document.getElementById("clock").textContent = new Date().toLocaleTimeString([], {hour12:false});
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+updateWeekBadge();
+
+fetchData();
+setInterval(fetchData, REFRESH_MS);
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ticket to Paradise — Departures</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #000000;
+    --panel: #0a0a0a;
+    --flap: #0d0d0d;
+    --flap-edge: rgba(255,255,255,0.07);
+    --amber: #fce300;
+    --white: #ffffff;
+    --label: #9aa0aa;
+    --go: #3fae7d;
+    --alert: #c1432c;
+    --hairline: #201f10;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100vh;
+    background: var(--bg);
+    font-family:'Inter', sans-serif;
+    color: var(--amber);
+  }
+  .board-wrap{
+    max-width: 1020px;
+    margin: 0 auto;
+    padding: 28px 18px 60px;
+  }
+
+  .header-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 14px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+  .badge{
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: var(--amber);
+    text-align: center;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .badge .line2{
+    display:block;
+    color: var(--label);
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .logo-lockup{
+    text-align: center;
+    flex: 1;
+    min-width: 0;
+  }
+  .logo-s30{
+    font-family:'Archivo Black', sans-serif;
+    font-size: clamp(22px, 5vw, 40px);
+    color: var(--white);
+    letter-spacing: 1px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 8px;
+    line-height: 1;
+  }
+  .palm-badge{
+    width: 0.8em;
+    height: 0.8em;
+    border-radius: 50%;
+    background: var(--amber);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size: 0.55em;
+    line-height: 1;
+  }
+  .logo-ticket{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: clamp(9px, 1.3vw, 12px);
+    letter-spacing: 3px;
+    color: var(--white);
+    text-transform: uppercase;
+    margin: 4px 0;
+  }
+  .logo-paradise{
+    font-family:'Archivo Black', sans-serif;
+    font-size: clamp(26px, 6.5vw, 52px);
+    line-height: 1;
+    color: var(--amber);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .logo-departures{
+    font-family:'Archivo Black', sans-serif;
+    font-size: clamp(12px, 2vw, 16px);
+    letter-spacing: 5px;
+    color: var(--white);
+    text-transform: uppercase;
+    margin-top: 6px;
+  }
+
+  .top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom: 2px solid var(--hairline);
+    padding-bottom: 14px;
+    margin-bottom: 18px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .destination-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--label);
+    text-transform: uppercase;
+  }
+  .destination-line .place{
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .status-cluster{
+    display:flex;
+    gap: 22px;
+    align-items:center;
+    font-family:'IBM Plex Mono', monospace;
+    flex-shrink: 0;
+  }
+  .status-item{
+    text-align:right;
+  }
+  .status-item .k{
+    font-size:10px;
+    letter-spacing:2px;
+    color: var(--label);
+    text-transform:uppercase;
+  }
+  .status-item .v{
+    font-size:18px;
+    font-weight: 600;
+    color: var(--amber);
+  }
+  .go-dot{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--go);
+    box-shadow: 0 0 8px var(--go);
+    display:inline-block;
+    margin-right:6px;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%,100%{ opacity:1; }
+    50%{ opacity:0.35; }
+  }
+
+  .board-panel{
+    background: #060606;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+    overflow:hidden;
+  }
+
+  .col-heads{
+    display:grid;
+    grid-template-columns: 64px 1fr 100px 150px;
+    padding: 12px 18px;
+    background: #060606;
+    border-bottom: 1px solid var(--hairline);
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--label);
+    text-transform: uppercase;
+  }
+  .col-heads span:nth-child(3), .col-heads span:nth-child(4){ text-align:right; }
+
+  .rows{
+    max-height: 620px;
+    overflow-y: auto;
+  }
+  .rows::-webkit-scrollbar{ width: 8px; }
+  .rows::-webkit-scrollbar-thumb{ background: var(--hairline); border-radius: 4px; }
+
+  .row{
+    display:grid;
+    grid-template-columns: 64px 1fr 100px 150px;
+    align-items:center;
+    padding: 8px 18px;
+    border-bottom: 1px solid #0e0e0e;
+  }
+  .row:nth-child(odd){ background: rgba(255,255,255,0.008); }
+  .row.rank-1{ background: rgba(252,227,0,0.05); }
+
+  .flap-cell{
+    display:flex;
+    gap: 3px;
+  }
+  .flap-cell.right{ justify-content:flex-end; }
+
+  .flap-char{
+    perspective: 300px;
+    width: 16px;
+    height: 26px;
+  }
+  .flap-char .face{
+    width:100%; height:100%;
+    background: var(--flap);
+    border: 1px solid var(--flap-edge);
+    border-radius: 3px;
+    position: relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Archivo Black', sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    color: var(--amber);
+    transform-origin: center;
+    animation: flapDrop 0.5s cubic-bezier(.2,.9,.3,1) both;
+  }
+  .flap-char .face::after{
+    content:"";
+    position:absolute;
+    left:0; right:0; top:50%;
+    height:1px;
+    background: rgba(0,0,0,0.5);
+  }
+  @keyframes flapDrop{
+    0%{ transform: rotateX(90deg); opacity:0; }
+    60%{ transform: rotateX(-8deg); opacity:1; }
+    100%{ transform: rotateX(0deg); opacity:1; }
+  }
+  .flap-char.wide{ width: 12px; }
+
+  .status-pill{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    padding: 4px 8px;
+    border-radius: 3px;
+    text-align:center;
+    text-transform:uppercase;
+    animation: flapDrop 0.5s cubic-bezier(.2,.9,.3,1) both;
+  }
+  .status-boarding{ background: rgba(63,174,125,0.15); color: var(--go); border: 1px solid rgba(63,174,125,0.4); }
+  .status-qualified{ background: rgba(252,227,0,0.15); color: var(--amber); border: 1px solid rgba(252,227,0,0.4); }
+  .status-open{ background: rgba(154,160,170,0.1); color: var(--label); border: 1px solid var(--hairline); }
+
+  .footer-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding: 14px 18px;
+    background: #060606;
+    border-top: 1px solid var(--hairline);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--label);
+    letter-spacing: 1px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .qualified-bar{
+    padding: 12px 18px;
+    background: rgba(252,227,0,0.04);
+    border-top: 1px solid var(--hairline);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--amber);
+    text-align: center;
+  }
+
+  .msg-state{
+    padding: 60px 20px;
+    text-align:center;
+    font-family:'IBM Plex Mono', monospace;
+    color: var(--label);
+    letter-spacing: 1px;
+  }
+  .msg-state .big{
+    color: var(--alert);
+    font-size: 15px;
+    letter-spacing: 3px;
+    margin-bottom: 10px;
+  }
+  .msg-state a{ color: var(--amber); }
+
+  @media (max-width: 700px){
+    .header-row{ flex-direction: column; }
+    .badge{ order: 2; }
+    .logo-lockup{ order: 1; }
+  }
+  @media (max-width: 560px){
+    .col-heads, .row{ grid-template-columns: 44px 1fr 70px 0; }
+    .col-heads span:nth-child(4), .row .status-cell{ display:none; }
+    .flap-char{ width: 12px; height:22px; }
+    .flap-char .face{ font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="board-wrap">
+  <div class="header-row">
     <div class="badge">WEEK 1<span class="line2">CHALLENGES</span></div>
     <div class="logo-lockup">
       <div class="logo-s30">S30 <span class="palm-badge">🌴</span></div>
