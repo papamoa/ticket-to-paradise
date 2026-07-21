@@ -115,6 +115,20 @@
     margin-top: 6px;
   }
 
+  .challenge-banner{
+    text-align: center;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: var(--amber);
+    background: rgba(252,227,0,0.05);
+    border: 1px solid var(--hairline);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin: 10px 0 18px;
+  }
+
   .top-bar{
     display:flex;
     justify-content:space-between;
@@ -333,8 +347,10 @@
       <div class="logo-paradise">Paradise</div>
       <div class="logo-departures">Departures</div>
     </div>
-    <div class="badge">ONGOING<span class="line2">CHALLENGES</span></div>
+    <div class="badge"><span id="ongoing-label">ONGOING</span><span class="line2">CHALLENGES</span></div>
   </div>
+
+  <div class="challenge-banner" id="challenge-banner">Loading this week's challenge…</div>
 
   <div class="top-bar">
     <div class="destination-line">Destination: <span class="place">Paradise 🌴</span></div>
@@ -374,18 +390,79 @@ const SHEET_NAME = "Ticket 2 Paradise";
 const SHEET_GID = "990596303";
 const CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
                 "/gviz/tq?tqx=out:csv&gid=" + SHEET_GID;
+const CHALLENGES_GID = "1739170375";
+const CHALLENGES_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
+                "/gviz/tq?tqx=out:csv&gid=" + CHALLENGES_GID;
 const REFRESH_MS = 30000;
 const QUALIFY_THRESHOLD = 15;
 const CHALLENGE_START = new Date(2026, 6, 27); // 27 July 2026, Week 1 Monday
 const TOTAL_WEEKS = 76;
 
-function updateWeekBadge(){
-  const now = new Date();
+function weekNumberFor(now){
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
   const diff = now - CHALLENGE_START;
-  let weekNum = diff < 0 ? 1 : Math.floor(diff / msPerWeek) + 1;
+  if (diff < 0) return 0;
+  let weekNum = Math.floor(diff / msPerWeek) + 1;
   if (weekNum > TOTAL_WEEKS) weekNum = TOTAL_WEEKS;
-  document.getElementById("week-num").textContent = "WEEK " + weekNum;
+  return weekNum;
+}
+
+function updateWeekBadge(){
+  const weekNum = weekNumberFor(new Date());
+  const el = document.getElementById("week-num");
+  const wrap = el.parentElement;
+  if (weekNum === 0){
+    el.textContent = "EYES PEELED";
+    wrap.querySelector(".line2").style.display = "none";
+  } else {
+    el.textContent = "WEEK " + weekNum;
+    wrap.querySelector(".line2").style.display = "";
+  }
+}
+
+function updateChallengeBanner(ongoingText, weekTextMap){
+  const el = document.getElementById("challenge-banner");
+  const label = document.getElementById("ongoing-label");
+  label.textContent = ongoingText && ongoingText.trim() ? ongoingText.trim().toUpperCase() : "ONGOING";
+
+  const weekNum = weekNumberFor(new Date());
+  if (weekNum === 0){
+    el.textContent = "Get ready — Week 1 kicks off 27 July 2026 🌴";
+    return;
+  }
+  const text = weekTextMap[weekNum];
+  if (text && text.trim()){
+    el.textContent = "Week " + weekNum + " Challenge: " + text.trim();
+  } else {
+    el.textContent = "Week " + weekNum + " Challenge: details coming soon";
+  }
+}
+
+async function fetchChallenges(){
+  try{
+    const res = await fetch(CHALLENGES_CSV_URL, {cache:"no-store"});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    const header = rows[0] || [];
+    let ongoingIdx = -1;
+    const weekIdx = {};
+    header.forEach((h, i) => {
+      const clean = (h || "").replace(/;/g, "").trim().toLowerCase();
+      if (clean.includes("ongoing")) ongoingIdx = i;
+      const m = clean.match(/week\s*(\d+)/);
+      if (m) weekIdx[parseInt(m[1], 10)] = i;
+    });
+    const dataRow = rows[1] || [];
+    const ongoingText = ongoingIdx >= 0 ? (dataRow[ongoingIdx] || "") : "";
+    const weekTextMap = {};
+    Object.keys(weekIdx).forEach(wk => {
+      weekTextMap[wk] = dataRow[weekIdx[wk]] || "";
+    });
+    updateChallengeBanner(ongoingText, weekTextMap);
+  } catch (err){
+    updateChallengeBanner("", {});
+  }
 }
 
 let lastSignature = "";
@@ -540,8 +617,12 @@ setInterval(tickClock, 1000);
 
 updateWeekBadge();
 
+fetchChallenges();
+setInterval(fetchChallenges, REFRESH_MS);
+
 fetchData();
 setInterval(fetchData, REFRESH_MS);
 </script>
 </body>
 </html>
+
