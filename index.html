@@ -51,16 +51,23 @@
     letter-spacing: 1.5px;
     color: var(--amber);
     text-align: center;
-    white-space: nowrap;
+    max-width: 200px;
     flex-shrink: 0;
   }
   .badge .line2{
     display:block;
     color: var(--white);
     font-size: 10px;
-    letter-spacing: 1px;
-    margin-top: 3px;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
     font-weight: 500;
+  }
+  .badge .line2 .badge-line{
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+  .badge .line2 .badge-line:first-child{
+    margin-top: 0;
   }
 
   .logo-lockup{
@@ -327,14 +334,14 @@
 
 <div class="board-wrap">
   <div class="header-row">
-    <div class="badge"><span id="week-num">WEEK 1</span><span class="line2" id="week-content">TBC</span></div>
+    <div class="badge"><span id="week-num">WEEK 1</span><div class="line2" id="week-content">TBC</div></div>
     <div class="logo-lockup">
       <div class="logo-s30">S30 <span class="palm-badge">🌴</span></div>
       <div class="logo-ticket">— Ticket to —</div>
       <div class="logo-paradise">Paradise</div>
       <div class="logo-departures">Departures</div>
     </div>
-    <div class="badge">ONGOING CHALLENGES<span class="line2" id="ongoing-label">TBC</span></div>
+    <div class="badge">ONGOING CHALLENGES<div class="line2" id="ongoing-label">TBC</div></div>
   </div>
 
   <div class="top-bar">
@@ -396,16 +403,26 @@ function updateWeekBadge(){
   document.getElementById("week-num").textContent = "WEEK " + weekNum;
 }
 
-function updateChallengeInfo(ongoingText, weekTextMap){
+function renderBadgeList(elId, items){
+  const el = document.getElementById(elId);
+  el.innerHTML = "";
+  if (!items.length){
+    el.textContent = "TBC";
+    return;
+  }
+  items.forEach(item => {
+    const line = document.createElement("div");
+    line.className = "badge-line";
+    line.textContent = item;
+    el.appendChild(line);
+  });
+}
+
+function updateChallengeInfo(ongoingItems, weekItemsMap){
   const weekNum = weekNumberFor(new Date());
   document.getElementById("week-num").textContent = "WEEK " + weekNum;
-
-  const weekText = weekTextMap[weekNum];
-  document.getElementById("week-content").textContent =
-    (weekText && weekText.trim()) ? weekText.trim() : "TBC";
-
-  document.getElementById("ongoing-label").textContent =
-    (ongoingText && ongoingText.trim()) ? ongoingText.trim() : "TBC";
+  renderBadgeList("week-content", weekItemsMap[weekNum] || []);
+  renderBadgeList("ongoing-label", ongoingItems);
 }
 
 async function fetchChallenges(){
@@ -423,15 +440,19 @@ async function fetchChallenges(){
       const m = clean.match(/week\s*(\d+)/);
       if (m) weekIdx[parseInt(m[1], 10)] = i;
     });
-    const dataRow = rows[1] || [];
-    const ongoingText = ongoingIdx >= 0 ? (dataRow[ongoingIdx] || "") : "";
-    const weekTextMap = {};
+    const dataRows = rows.slice(1);
+    const ongoingItems = dataRows
+      .map(r => (r[ongoingIdx] || "").trim())
+      .filter(Boolean);
+    const weekItemsMap = {};
     Object.keys(weekIdx).forEach(wk => {
-      weekTextMap[wk] = dataRow[weekIdx[wk]] || "";
+      weekItemsMap[wk] = dataRows
+        .map(r => (r[weekIdx[wk]] || "").trim())
+        .filter(Boolean);
     });
-    updateChallengeInfo(ongoingText, weekTextMap);
+    updateChallengeInfo(ongoingItems, weekItemsMap);
   } catch (err){
-    updateChallengeInfo("", {});
+    updateChallengeInfo([], {});
   }
 }
 
