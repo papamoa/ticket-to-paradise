@@ -123,6 +123,20 @@
     margin-top: 6px;
   }
 
+  .challenge-banner{
+    text-align: center;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: var(--amber);
+    background: rgba(252,227,0,0.08);
+    border: 1px solid rgba(252,227,0,0.3);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin: 12px 0 18px;
+  }
+
   .top-bar{
     display:flex;
     justify-content:space-between;
@@ -344,6 +358,8 @@
     <div class="badge">ONGOING CHALLENGES<div class="line2" id="ongoing-label">TBC</div></div>
   </div>
 
+  <div class="challenge-banner" id="challenge-banner">Loading…</div>
+
   <div class="top-bar">
     <div class="destination-line">Destination: <span class="place">Paradise 🌴</span></div>
     <div class="status-cluster">
@@ -419,10 +435,18 @@ function renderBadgeList(elId, items){
 }
 
 function updateChallengeInfo(ongoingItems, weekItemsMap){
-  const weekNum = weekNumberFor(new Date());
+  const now = new Date();
+  const weekNum = weekNumberFor(now);
   document.getElementById("week-num").textContent = "WEEK " + weekNum;
   renderBadgeList("week-content", weekItemsMap[weekNum] || []);
   renderBadgeList("ongoing-label", ongoingItems);
+
+  const banner = document.getElementById("challenge-banner");
+  if (now - CHALLENGE_START < 0){
+    banner.textContent = "Get ready — flight departs 27 July 2026 🌴";
+  } else {
+    banner.textContent = "✈️ Week " + weekNum + " is underway!";
+  }
 }
 
 async function fetchChallenges(){
