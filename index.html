@@ -56,10 +56,11 @@
   }
   .badge .line2{
     display:block;
-    color: var(--label);
-    font-size: 9px;
+    color: var(--white);
+    font-size: 10px;
     letter-spacing: 1px;
-    margin-top: 2px;
+    margin-top: 3px;
+    font-weight: 500;
   }
 
   .logo-lockup{
@@ -113,20 +114,6 @@
     color: var(--white);
     text-transform: uppercase;
     margin-top: 6px;
-  }
-
-  .challenge-banner{
-    text-align: center;
-    font-family:'IBM Plex Mono', monospace;
-    font-weight: 600;
-    font-size: 13px;
-    letter-spacing: 0.5px;
-    color: var(--amber);
-    background: rgba(252,227,0,0.05);
-    border: 1px solid var(--hairline);
-    border-radius: 6px;
-    padding: 10px 16px;
-    margin: 10px 0 18px;
   }
 
   .top-bar{
@@ -340,17 +327,15 @@
 
 <div class="board-wrap">
   <div class="header-row">
-    <div class="badge"><span id="week-num">WEEK 1</span><span class="line2">CHALLENGES</span></div>
+    <div class="badge"><span id="week-num">WEEK 1</span><span class="line2" id="week-content">TBC</span></div>
     <div class="logo-lockup">
       <div class="logo-s30">S30 <span class="palm-badge">🌴</span></div>
       <div class="logo-ticket">— Ticket to —</div>
       <div class="logo-paradise">Paradise</div>
       <div class="logo-departures">Departures</div>
     </div>
-    <div class="badge"><span id="ongoing-label">ONGOING</span><span class="line2">CHALLENGES</span></div>
+    <div class="badge">ONGOING CHALLENGES<span class="line2" id="ongoing-label">TBC</span></div>
   </div>
-
-  <div class="challenge-banner" id="challenge-banner">Loading this week's challenge…</div>
 
   <div class="top-bar">
     <div class="destination-line">Destination: <span class="place">Paradise 🌴</span></div>
@@ -401,41 +386,26 @@ const TOTAL_WEEKS = 76;
 function weekNumberFor(now){
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
   const diff = now - CHALLENGE_START;
-  if (diff < 0) return 0;
-  let weekNum = Math.floor(diff / msPerWeek) + 1;
+  let weekNum = diff < 0 ? 1 : Math.floor(diff / msPerWeek) + 1;
   if (weekNum > TOTAL_WEEKS) weekNum = TOTAL_WEEKS;
   return weekNum;
 }
 
 function updateWeekBadge(){
   const weekNum = weekNumberFor(new Date());
-  const el = document.getElementById("week-num");
-  const wrap = el.parentElement;
-  if (weekNum === 0){
-    el.textContent = "EYES PEELED";
-    wrap.querySelector(".line2").style.display = "none";
-  } else {
-    el.textContent = "WEEK " + weekNum;
-    wrap.querySelector(".line2").style.display = "";
-  }
+  document.getElementById("week-num").textContent = "WEEK " + weekNum;
 }
 
-function updateChallengeBanner(ongoingText, weekTextMap){
-  const el = document.getElementById("challenge-banner");
-  const label = document.getElementById("ongoing-label");
-  label.textContent = ongoingText && ongoingText.trim() ? ongoingText.trim().toUpperCase() : "ONGOING";
-
+function updateChallengeInfo(ongoingText, weekTextMap){
   const weekNum = weekNumberFor(new Date());
-  if (weekNum === 0){
-    el.textContent = "Get ready — Week 1 kicks off 27 July 2026 🌴";
-    return;
-  }
-  const text = weekTextMap[weekNum];
-  if (text && text.trim()){
-    el.textContent = "Week " + weekNum + " Challenge: " + text.trim();
-  } else {
-    el.textContent = "Week " + weekNum + " Challenge: details coming soon";
-  }
+  document.getElementById("week-num").textContent = "WEEK " + weekNum;
+
+  const weekText = weekTextMap[weekNum];
+  document.getElementById("week-content").textContent =
+    (weekText && weekText.trim()) ? weekText.trim() : "TBC";
+
+  document.getElementById("ongoing-label").textContent =
+    (ongoingText && ongoingText.trim()) ? ongoingText.trim() : "TBC";
 }
 
 async function fetchChallenges(){
@@ -459,9 +429,9 @@ async function fetchChallenges(){
     Object.keys(weekIdx).forEach(wk => {
       weekTextMap[wk] = dataRow[weekIdx[wk]] || "";
     });
-    updateChallengeBanner(ongoingText, weekTextMap);
+    updateChallengeInfo(ongoingText, weekTextMap);
   } catch (err){
-    updateChallengeBanner("", {});
+    updateChallengeInfo("", {});
   }
 }
 
