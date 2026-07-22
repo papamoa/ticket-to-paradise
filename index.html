@@ -123,35 +123,47 @@
     margin-top: 6px;
   }
   .departure-banner{
-    display: inline-block;
-    margin-top: 10px;
+    text-align: center;
     font-family:'IBM Plex Mono', monospace;
-    font-weight: 600;
-    font-size: 12px;
+    font-weight: 700;
+    font-size: 15px;
     letter-spacing: 0.5px;
     color: var(--amber);
     background: rgba(252,227,0,0.08);
     border: 1px solid rgba(252,227,0,0.3);
     border-radius: 6px;
-    padding: 6px 14px;
+    padding: 14px 16px;
+    margin: 12px 0 12px;
   }
 
   .bonus-banner{
-    text-align: center;
     font-family:'IBM Plex Mono', monospace;
     font-weight: 600;
     font-size: 13px;
     letter-spacing: 0.5px;
     color: var(--white);
-    background: rgba(63,174,125,0.08);
-    border: 1px solid rgba(63,174,125,0.35);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.25);
     border-radius: 6px;
-    padding: 10px 16px;
+    padding: 10px 0;
     margin: 0 0 18px;
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+  }
+  .bonus-banner .ticker-track{
+    display: inline-block;
+    animation: tickerScroll 10s linear infinite;
   }
   .bonus-banner .seat{
-    color: var(--go);
+    color: var(--white);
     font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  @keyframes tickerScroll{
+    0%{ transform: translateX(-100%); }
+    100%{ transform: translateX(100%); }
   }
 
   .top-bar{
@@ -371,12 +383,13 @@
       <div class="logo-ticket">— Ticket to —</div>
       <div class="logo-paradise">Paradise</div>
       <div class="logo-departures">Departures</div>
-      <div class="departure-banner" id="departure-banner">Get ready — flight departs 27 July 2026 🌴</div>
     </div>
     <div class="badge">ONGOING CHALLENGES<div class="line2" id="ongoing-label">TBC</div></div>
   </div>
 
-  <div class="bonus-banner" id="bonus-banner">🎟️ This Week's Bonus Seats: Loading…</div>
+  <div class="departure-banner" id="departure-banner">Get ready — flight departs 27 July 2026 🌴</div>
+
+  <div class="bonus-banner" id="bonus-banner"><span class="ticker-track">🎟️ This Week's Bonus Seats: Loading…</span></div>
 
   <div class="top-bar">
     <div class="destination-line">Destination: <span class="place">Paradise 🌴</span></div>
@@ -672,14 +685,14 @@ async function fetchBonusSeats(){
 
     const el = document.getElementById("bonus-banner");
     if (!seats.length){
-      el.textContent = "🎟️ This Week's Bonus Seats: TBC";
+      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: TBC</span>';
     } else {
-      el.innerHTML = "🎟️ This Week's Bonus Seats: " +
+      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: ' +
         seats.map(s => '<span class="seat">' + s + "</span>").join(" · ") +
-        " (+1 entry each!)";
+        " (+1 entry each!)</span>";
     }
   } catch (err){
-    document.getElementById("bonus-banner").textContent = "🎟️ This Week's Bonus Seats: TBC";
+    document.getElementById("bonus-banner").innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: TBC</span>';
   }
 }
 
