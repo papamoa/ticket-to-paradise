@@ -428,20 +428,21 @@
   .pin-row{
     display: flex;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 18px;
   }
   .pin-digit{
-    width: 52px;
-    height: 64px;
+    width: 46px;
+    height: 58px;
     text-align: center;
     font-family:'Archivo Black', sans-serif;
-    font-size: 28px;
+    font-size: 26px;
     color: var(--amber);
     background: #0d0d0d;
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 8px;
     outline: none;
+    text-transform: uppercase;
   }
   .pin-digit:focus{
     border-color: var(--amber);
@@ -471,10 +472,11 @@
     <div class="lock-title">Paradise</div>
     <div class="lock-label">Enter Access Code</div>
     <div class="pin-row">
-      <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
-      <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
-      <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
-      <input class="pin-digit" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" autocomplete="off">
+      <input class="pin-digit" type="text" maxlength="1" autocomplete="off">
+      <input class="pin-digit" type="text" maxlength="1" autocomplete="off">
+      <input class="pin-digit" type="text" maxlength="1" autocomplete="off">
+      <input class="pin-digit" type="text" maxlength="1" autocomplete="off">
+      <input class="pin-digit" type="text" maxlength="1" autocomplete="off">
     </div>
     <div class="lock-error" id="lock-error" style="visibility:hidden;">Incorrect code — try again</div>
   </div>
@@ -802,7 +804,7 @@ async function fetchBonusSeats(){
 }
 
 function initLock(){
-  const ACCESS_CODE = "2707";
+  const ACCESS_CODE = "SS727";
   const lockScreen = document.getElementById("lock-screen");
 
   if (localStorage.getItem("s30_access") === "1"){
@@ -816,8 +818,8 @@ function initLock(){
   inputs[0].focus();
 
   function checkCode(){
-    const code = inputs.map(i => i.value).join("");
-    if (code.length < 4) return;
+    const code = inputs.map(i => i.value).join("").toUpperCase();
+    if (code.length < inputs.length) return;
     if (code === ACCESS_CODE){
       localStorage.setItem("s30_access", "1");
       lockScreen.style.display = "none";
@@ -832,7 +834,7 @@ function initLock(){
 
   inputs.forEach((inp, idx) => {
     inp.addEventListener("input", () => {
-      inp.value = inp.value.replace(/[^0-9]/g, "").slice(0, 1);
+      inp.value = inp.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 1).toUpperCase();
       if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
       checkCode();
     });
