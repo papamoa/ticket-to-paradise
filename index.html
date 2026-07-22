@@ -122,19 +122,36 @@
     text-transform: uppercase;
     margin-top: 6px;
   }
-
-  .challenge-banner{
-    text-align: center;
+  .departure-banner{
+    display: inline-block;
+    margin-top: 10px;
     font-family:'IBM Plex Mono', monospace;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     letter-spacing: 0.5px;
     color: var(--amber);
     background: rgba(252,227,0,0.08);
     border: 1px solid rgba(252,227,0,0.3);
     border-radius: 6px;
+    padding: 6px 14px;
+  }
+
+  .bonus-banner{
+    text-align: center;
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: var(--white);
+    background: rgba(63,174,125,0.08);
+    border: 1px solid rgba(63,174,125,0.35);
+    border-radius: 6px;
     padding: 10px 16px;
-    margin: 12px 0 18px;
+    margin: 0 0 18px;
+  }
+  .bonus-banner .seat{
+    color: var(--go);
+    font-weight: 700;
   }
 
   .top-bar{
@@ -354,11 +371,12 @@
       <div class="logo-ticket">— Ticket to —</div>
       <div class="logo-paradise">Paradise</div>
       <div class="logo-departures">Departures</div>
+      <div class="departure-banner" id="departure-banner">Get ready — flight departs 27 July 2026 🌴</div>
     </div>
     <div class="badge">ONGOING CHALLENGES<div class="line2" id="ongoing-label">TBC</div></div>
   </div>
 
-  <div class="challenge-banner" id="challenge-banner">Loading…</div>
+  <div class="bonus-banner" id="bonus-banner">🎟️ This Week's Bonus Seats: Loading…</div>
 
   <div class="top-bar">
     <div class="destination-line">Destination: <span class="place">Paradise 🌴</span></div>
@@ -401,6 +419,9 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
 const CHALLENGES_GID = "1739170375";
 const CHALLENGES_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
                 "/gviz/tq?tqx=out:csv&gid=" + CHALLENGES_GID;
+const BONUS_GID = "748826441";
+const BONUS_CSV_URL = "https://docs.google.com/spreadsheets/d/" + SHEET_ID +
+                "/gviz/tq?tqx=out:csv&gid=" + BONUS_GID;
 const REFRESH_MS = 30000;
 const QUALIFY_THRESHOLD = 15;
 const CHALLENGE_START = new Date(2026, 6, 27); // 27 July 2026, Week 1 Monday
@@ -417,6 +438,17 @@ function weekNumberFor(now){
 function updateWeekBadge(){
   const weekNum = weekNumberFor(new Date());
   document.getElementById("week-num").textContent = "WEEK " + weekNum;
+  updateDepartureBanner();
+}
+
+function updateDepartureBanner(){
+  const el = document.getElementById("departure-banner");
+  const now = new Date();
+  if (now < CHALLENGE_START){
+    el.textContent = "Get ready — flight departs 27 July 2026 🌴";
+  } else {
+    el.textContent = "✈️ Flight has departed — Week " + weekNumberFor(now) + " is underway";
+  }
 }
 
 function renderBadgeList(elId, items){
@@ -438,15 +470,9 @@ function updateChallengeInfo(ongoingItems, weekItemsMap){
   const now = new Date();
   const weekNum = weekNumberFor(now);
   document.getElementById("week-num").textContent = "WEEK " + weekNum;
+  updateDepartureBanner();
   renderBadgeList("week-content", weekItemsMap[weekNum] || []);
   renderBadgeList("ongoing-label", ongoingItems);
-
-  const banner = document.getElementById("challenge-banner");
-  if (now - CHALLENGE_START < 0){
-    banner.textContent = "Get ready — flight departs 27 July 2026 🌴";
-  } else {
-    banner.textContent = "✈️ Week " + weekNum + " is underway!";
-  }
 }
 
 async function fetchChallenges(){
@@ -624,6 +650,39 @@ async function fetchData(){
   }
 }
 
+async function fetchBonusSeats(){
+  try{
+    const res = await fetch(BONUS_CSV_URL, {cache:"no-store"});
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    const rows = parseCSV(text);
+    const header = rows[0] || [];
+    const weekIdx = {};
+    header.forEach((h, i) => {
+      const clean = (h || "").replace(/;/g, "").trim().toLowerCase();
+      const m = clean.match(/week\s*(\d+)/);
+      if (m) weekIdx[parseInt(m[1], 10)] = i;
+    });
+    const dataRows = rows.slice(1);
+    const weekNum = weekNumberFor(new Date());
+    const colIdx = weekIdx[weekNum];
+    const seats = colIdx === undefined ? [] : dataRows
+      .map(r => (r[colIdx] || "").trim())
+      .filter(Boolean);
+
+    const el = document.getElementById("bonus-banner");
+    if (!seats.length){
+      el.textContent = "🎟️ This Week's Bonus Seats: TBC";
+    } else {
+      el.innerHTML = "🎟️ This Week's Bonus Seats: " +
+        seats.map(s => '<span class="seat">' + s + "</span>").join(" · ") +
+        " (+1 entry each!)";
+    }
+  } catch (err){
+    document.getElementById("bonus-banner").textContent = "🎟️ This Week's Bonus Seats: TBC";
+  }
+}
+
 function tickClock(){
   document.getElementById("clock").textContent = new Date().toLocaleTimeString([], {hour12:false});
 }
@@ -634,6 +693,9 @@ updateWeekBadge();
 
 fetchChallenges();
 setInterval(fetchChallenges, REFRESH_MS);
+
+fetchBonusSeats();
+setInterval(fetchBonusSeats, REFRESH_MS);
 
 fetchData();
 setInterval(fetchData, REFRESH_MS);
