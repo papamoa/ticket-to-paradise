@@ -478,23 +478,29 @@
   .sponsors-row{
     background: #ffffff;
     border-radius: 10px;
-    padding: 18px 28px;
+    padding: 20px 24px;
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-evenly;
     align-items: center;
-    gap: 32px;
+    gap: 20px;
+    width: 100%;
   }
   .sponsor-logo{
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 1 1 0;
   }
   .sponsor-logo img{
-    max-height: 40px;
-    max-width: 140px;
+    max-height: 56px;
+    max-width: 180px;
     object-fit: contain;
     display: block;
+  }
+  .sponsor-logo.sponsor-logo--large img{
+    max-height: 84px;
+    max-width: 220px;
   }
 </style>
 </head>
@@ -569,7 +575,7 @@
     <div class="sponsors-row">
       <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=12jBHsG8nX8XgGTD0V_ByGo88XF1H7iZj&sz=w200" alt="Flight Centre Canada"></div>
       <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1dMf0nRFFbtQ5vQEJ_Q-s4qOiQKNIjx9w&sz=w200" alt="Hinchon Homes"></div>
-      <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1hwDrJKbd784_wWNKMQcBua77juIKqCzJ&sz=w200" alt="Shoreline"></div>
+      <div class="sponsor-logo sponsor-logo--large"><img src="https://drive.google.com/thumbnail?id=1hwDrJKbd784_wWNKMQcBua77juIKqCzJ&sz=w200" alt="Shoreline"></div>
       <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1FODsZCX2a-sh0DhP5CBeD30LaBhI_UTj&sz=w200" alt="Tax Agent 99"></div>
       <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1bMj4JXDsSWCURdsPJH51FW7Hy8_0_e2r&sz=w200" alt="Wan N Shihne"></div>
     </div>
