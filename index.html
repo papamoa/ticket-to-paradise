@@ -461,6 +461,42 @@
     20%, 60%{ transform: translateX(-8px); }
     40%, 80%{ transform: translateX(8px); }
   }
+
+  .sponsors{
+    text-align: center;
+    margin-top: 32px;
+  }
+  .sponsors-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--label);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .sponsors-row{
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 14px;
+  }
+  .sponsor-logo{
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 8px 14px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sponsor-logo img{
+    max-height: 26px;
+    max-width: 100px;
+    object-fit: contain;
+    display: block;
+  }
 </style>
 </head>
 <body>
@@ -526,6 +562,17 @@
     <div class="footer-bar">
       <span id="summary">— members · — entries in the draw</span>
       <span id="updated">Last updated —</span>
+    </div>
+  </div>
+
+  <div class="sponsors">
+    <div class="sponsors-label">Proudly Sponsored By</div>
+    <div class="sponsors-row">
+      <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=12jBHsG8nX8XgGTD0V_ByGo88XF1H7iZj&sz=w200" alt="Flight Centre Canada"></div>
+      <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1dMf0nRFFbtQ5vQEJ_Q-s4qOiQKNIjx9w&sz=w200" alt="Hinchon Homes"></div>
+      <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1hwDrJKbd784_wWNKMQcBua77juIKqCzJ&sz=w200" alt="Shoreline"></div>
+      <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1FODsZCX2a-sh0DhP5CBeD30LaBhI_UTj&sz=w200" alt="Tax Agent 99"></div>
+      <div class="sponsor-logo"><img src="https://drive.google.com/thumbnail?id=1bMj4JXDsSWCURdsPJH51FW7Hy8_0_e2r&sz=w200" alt="Wan N Shihne"></div>
     </div>
   </div>
 </div>
@@ -704,164 +751,4 @@ function render(entries){
     rowEl.appendChild(makeFlapCell(padNum(e.entries, 4), {right:true, wide:false, rowDelay}));
 
     const st = statusFor(e.entries);
-    const statusCell = document.createElement("div");
-    statusCell.className = "status-cell";
-    const pill = document.createElement("span");
-    pill.className = "status-pill " + st.cls;
-    pill.textContent = st.label;
-    pill.style.animationDelay = rowDelay + "ms";
-    statusCell.appendChild(pill);
-    rowEl.appendChild(statusCell);
-
-    rowsEl.appendChild(rowEl);
-  });
-
-  const totalEntries = entries.reduce((sum, e) => sum + e.entries, 0);
-  const qualifiedCount = entries.filter(e => e.entries >= QUALIFY_THRESHOLD).length;
-
-  document.getElementById("summary").textContent =
-    entries.length + " members · " + totalEntries + " entries in the draw";
-  document.getElementById("updated").textContent =
-    "Last updated " + new Date().toLocaleTimeString();
-  document.getElementById("qualified-line").textContent =
-    qualifiedCount + " of " + entries.length + " members have qualified with " + QUALIFY_THRESHOLD + "+ entries";
-}
-
-async function fetchData(){
-  try{
-    const res = await fetch(CSV_URL, {cache:"no-store"});
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const text = await res.text();
-    const rows = parseCSV(text);
-
-    let dataRows = rows;
-    const maybeHeader = rows[0];
-    if (maybeHeader && isNaN(parseFloat(maybeHeader[1]))){
-      dataRows = rows.slice(1);
-    }
-
-    const entries = dataRows
-      .map(r => ({
-        name: (r[0] || "").trim(),
-        entries: parseInt((r[1] || "0").replace(/[^0-9.-]/g, ""), 10) || 0
-      }))
-      .filter(e => e.name.length > 0)
-      .sort((a, b) => b.entries - a.entries);
-
-    const signature = JSON.stringify(entries);
-    document.getElementById("feed-state").textContent = "LIVE";
-    document.getElementById("feed-state").style.color = "var(--go)";
-
-    if (signature !== lastSignature){
-      lastSignature = signature;
-      render(entries);
-    }
-  } catch (err){
-    document.getElementById("feed-state").textContent = "OFFLINE";
-    document.getElementById("feed-state").style.color = "var(--alert)";
-    const rowsEl = document.getElementById("rows");
-    if (!lastSignature){
-      rowsEl.innerHTML =
-        '<div class="msg-state"><div class="big">SCHEDULE UNAVAILABLE</div>' +
-        'Could not reach the sheet. Make sure "Trial System of God" is shared as ' +
-        '"Anyone with the link can view", and that the tab is named exactly "' +
-        SHEET_NAME + '".</div>';
-    }
-  }
-}
-
-async function fetchBonusSeats(){
-  try{
-    const res = await fetch(BONUS_CSV_URL, {cache:"no-store"});
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const text = await res.text();
-    const rows = parseCSV(text);
-    const header = rows[0] || [];
-    const weekIdx = {};
-    header.forEach((h, i) => {
-      const clean = (h || "").replace(/;/g, "").trim().toLowerCase();
-      const m = clean.match(/week\s*(\d+)/);
-      if (m) weekIdx[parseInt(m[1], 10)] = i;
-    });
-    const dataRows = rows.slice(1);
-    const weekNum = weekNumberFor(new Date());
-    const colIdx = weekIdx[weekNum];
-    const seats = colIdx === undefined ? [] : dataRows
-      .map(r => (r[colIdx] || "").trim())
-      .filter(Boolean);
-
-    const el = document.getElementById("bonus-banner");
-    if (!seats.length){
-      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: TBC</span>';
-    } else {
-      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: ' +
-        seats.map(s => '<span class="seat">' + s + "</span>").join(" · ") +
-        " (+1 entry each!)</span>";
-    }
-  } catch (err){
-    document.getElementById("bonus-banner").innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: TBC</span>';
-  }
-}
-
-function initLock(){
-  const ACCESS_CODE = "SS727";
-  const lockScreen = document.getElementById("lock-screen");
-
-  if (localStorage.getItem("s30_access") === "1"){
-    lockScreen.style.display = "none";
-    return;
-  }
-
-  const inputs = [...document.querySelectorAll(".pin-digit")];
-  const errorEl = document.getElementById("lock-error");
-  const card = document.getElementById("lock-card");
-  inputs[0].focus();
-
-  function checkCode(){
-    const code = inputs.map(i => i.value).join("").toUpperCase();
-    if (code.length < inputs.length) return;
-    if (code === ACCESS_CODE){
-      localStorage.setItem("s30_access", "1");
-      lockScreen.style.display = "none";
-    } else {
-      errorEl.style.visibility = "visible";
-      card.classList.add("shake");
-      setTimeout(() => card.classList.remove("shake"), 400);
-      inputs.forEach(i => i.value = "");
-      inputs[0].focus();
-    }
-  }
-
-  inputs.forEach((inp, idx) => {
-    inp.addEventListener("input", () => {
-      inp.value = inp.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 1).toUpperCase();
-      if (inp.value && idx < inputs.length - 1) inputs[idx + 1].focus();
-      checkCode();
-    });
-    inp.addEventListener("keydown", (e) => {
-      if (e.key === "Backspace" && !inp.value && idx > 0) inputs[idx - 1].focus();
-    });
-  });
-}
-initLock();
-
-function tickClock(){
-  document.getElementById("clock").textContent = new Date().toLocaleTimeString([], {hour12:false});
-}
-tickClock();
-setInterval(tickClock, 1000);
-
-updateWeekBadge();
-
-fetchChallenges();
-setInterval(fetchChallenges, REFRESH_MS);
-
-fetchBonusSeats();
-setInterval(fetchBonusSeats, REFRESH_MS);
-
-fetchData();
-setInterval(fetchData, REFRESH_MS);
-</script>
-</body>
-</html>
-
+    const statusCell = document.c
