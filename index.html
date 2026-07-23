@@ -262,46 +262,43 @@
   .row:nth-child(odd){ background: rgba(255,255,255,0.008); }
   .row.rank-1{ background: rgba(252,227,0,0.05); }
 
-  .flap-cell{
-    display:flex;
-    gap: 3px;
-  }
-  .flap-cell.right{ justify-content:flex-end; }
-
-  .flap-char{
-    perspective: 300px;
-    width: 16px;
-    height: 26px;
-  }
-  .flap-char .face{
-    width:100%; height:100%;
-    background: var(--flap);
-    border: 1px solid var(--flap-edge);
-    border-radius: 3px;
-    position: relative;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-family:'Archivo Black', sans-serif;
-    font-weight: 400;
-    font-size: 16px;
+  .row-rank{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1px;
     color: var(--amber);
-    transform-origin: center;
-    animation: flapDrop 0.5s cubic-bezier(.2,.9,.3,1) both;
+    font-variant-numeric: tabular-nums;
   }
-  .flap-char .face::after{
-    content:"";
-    position:absolute;
-    left:0; right:0; top:50%;
-    height:1px;
-    background: rgba(0,0,0,0.5);
+  .row-name{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    color: var(--amber);
+    text-transform: uppercase;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    padding-right: 8px;
   }
-  @keyframes flapDrop{
-    0%{ transform: rotateX(90deg); opacity:0; }
-    60%{ transform: rotateX(-8deg); opacity:1; }
-    100%{ transform: rotateX(0deg); opacity:1; }
+  .row-entries{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
   }
-  .flap-char.wide{ width: 12px; }
+  .row{
+    animation: rowFadeIn 0.35s ease both;
+  }
+  @keyframes rowFadeIn{
+    from{ opacity:0; transform: translateY(4px); }
+    to{ opacity:1; transform: none; }
+  }
 
   .status-pill{
     font-family:'IBM Plex Mono', monospace;
@@ -312,7 +309,6 @@
     border-radius: 3px;
     text-align:center;
     text-transform:uppercase;
-    animation: flapDrop 0.5s cubic-bezier(.2,.9,.3,1) both;
   }
   .status-boarding{ background: rgba(63,174,125,0.15); color: var(--go); border: 1px solid rgba(63,174,125,0.4); }
   .status-qualified{ background: rgba(252,227,0,0.15); color: var(--amber); border: 1px solid rgba(252,227,0,0.4); }
@@ -366,10 +362,11 @@
     .logo-lockup{ order: 1; }
   }
   @media (max-width: 560px){
-    .col-heads, .row{ grid-template-columns: 44px 1fr 70px 0; }
+    .col-heads, .row{ grid-template-columns: 40px 1fr 60px 0; }
     .col-heads span:nth-child(4), .row .status-cell{ display:none; }
-    .flap-char{ width: 12px; height:22px; }
-    .flap-char .face{ font-size: 13px; }
+    .row-rank{ font-size: 13px; }
+    .row-name{ font-size: 12px; }
+    .row-entries{ font-size: 13px; }
   }
 
   .lock-screen{
@@ -560,7 +557,7 @@ function updateWeekBadge(){
   const weekNum = weekNumberFor(new Date());
   document.getElementById("week-num").textContent = "WEEK " + weekNum;
   updateDepartureBanner();
-          }
+}
 
 function updateDepartureBanner(){
   const el = document.getElementById("departure-banner");
@@ -659,29 +656,6 @@ function statusFor(entryCount){
   return {label:"Gate Open", cls:"status-open"};
 }
 
-function makeFlapCell(text, opts){
-  opts = opts || {};
-  const wrap = document.createElement("div");
-  wrap.className = "flap-cell" + (opts.right ? " right" : "");
-  const chars = String(text).split("");
-  chars.forEach((ch, idx) => {
-    const cell = document.createElement("div");
-    cell.className = "flap-char" + (opts.wide === false ? " wide" : "");
-    const face = document.createElement("div");
-    face.className = "face";
-    face.textContent = ch === " " ? "\u00A0" : ch;
-    face.style.animationDelay = (idx * 18 + (opts.rowDelay || 0)) + "ms";
-    cell.appendChild(face);
-    wrap.appendChild(cell);
-  });
-  return wrap;
-}
-
-function pad(str, len){
-  str = String(str).toUpperCase();
-  if (str.length >= len) return str.slice(0, len);
-  return str + " ".repeat(len - str.length);
-}
 function padNum(n, len){
   return String(n).padStart(len, "0");
 }
@@ -692,17 +666,31 @@ function render(entries){
 
   if (!entries.length){
     rowsEl.innerHTML = '<div class="msg-state">No entries logged yet — check back once the first entries are added.</div>';
+    return;
   }
 
   entries.forEach((e, i) => {
     const rank = i + 1;
-    const rowDelay = i * 40;
+    const rowDelay = Math.min(i * 12, 300);
     const rowEl = document.createElement("div");
     rowEl.className = "row" + (rank === 1 ? " rank-1" : "");
+    rowEl.style.animationDelay = rowDelay + "ms";
 
-    rowEl.appendChild(makeFlapCell(padNum(rank, 3), {wide:false, rowDelay}));
-    rowEl.appendChild(makeFlapCell(pad(e.name, 20), {rowDelay}));
-    rowEl.appendChild(makeFlapCell(padNum(e.entries, 4), {right:true, wide:false, rowDelay}));
+    const rankEl = document.createElement("div");
+    rankEl.className = "row-rank";
+    rankEl.textContent = padNum(rank, 3);
+    rowEl.appendChild(rankEl);
+
+    const nameEl = document.createElement("div");
+    nameEl.className = "row-name";
+    nameEl.textContent = e.name.toUpperCase();
+    nameEl.title = e.name;
+    rowEl.appendChild(nameEl);
+
+    const entriesEl = document.createElement("div");
+    entriesEl.className = "row-entries";
+    entriesEl.textContent = padNum(e.entries, 4);
+    rowEl.appendChild(entriesEl);
 
     const st = statusFor(e.entries);
     const statusCell = document.createElement("div");
@@ -710,7 +698,6 @@ function render(entries){
     const pill = document.createElement("span");
     pill.className = "status-pill " + st.cls;
     pill.textContent = st.label;
-    pill.style.animationDelay = rowDelay + "ms";
     statusCell.appendChild(pill);
     rowEl.appendChild(statusCell);
 
