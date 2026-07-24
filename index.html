@@ -364,20 +364,11 @@
     .logo-lockup{ order: 1; }
   }
   @media (max-width: 560px){
-    .col-heads{ grid-template-columns: 40px 1fr 60px 0; }
-    .col-heads span:nth-child(4){ display:none; }
-    .row{
-      grid-template-columns: 40px 1fr 60px;
-      grid-template-areas:
-        "rank name entries"
-        "status status status";
-      row-gap: 6px;
-    }
-    .row-rank{ grid-area: rank; font-size: 13px; }
-    .row-name{ grid-area: name; font-size: 12px; }
-    .row-entries{ grid-area: entries; font-size: 13px; }
-    .status-cell{ grid-area: status; display:block; text-align: left; }
-    .status-pill{ display: inline-block; }
+    .col-heads, .row{ grid-template-columns: 40px 1fr 60px 0; }
+    .col-heads span:nth-child(4), .row .status-cell{ display:none; }
+    .row-rank{ font-size: 13px; }
+    .row-name{ font-size: 12px; }
+    .row-entries{ font-size: 13px; }
   }
 
   .lock-screen{
