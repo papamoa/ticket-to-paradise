@@ -655,7 +655,7 @@ function statusFor(entryCount){
   const isSunday = new Date().getDay() === 0;
   if (isSunday) return {label:"Boarding", cls:"status-boarding"};
   if (entryCount >= QUALIFY_THRESHOLD) return {label:"Qualified", cls:"status-qualified"};
-  return {label:"Boarding Soon", cls:"status-open"};
+  return {label:"Final Call", cls:"status-open"};
 }
 
 function padNum(n, len){
