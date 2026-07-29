@@ -496,7 +496,7 @@
 
   <div class="departure-banner" id="departure-banner">Get ready — flight departs 27 July 2026 🌴</div>
 
-  <div class="bonus-banner" id="bonus-banner"><span class="ticker-track">🎟️ This Week's Bonus Seats: Loading…</span></div>
+  <div class="bonus-banner" id="bonus-banner"><span class="ticker-track">🎟️ This Week's Bonus Entries: Loading…</span></div>
 
   <div class="top-bar">
     <div class="destination-line">Destination: <span class="place">Paradise 🌴</span></div>
@@ -782,14 +782,14 @@ async function fetchBonusSeats(){
 
     const el = document.getElementById("bonus-banner");
     if (!seats.length){
-      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: TBC</span>';
+      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: TBC</span>';
     } else {
-      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: ' +
+      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: ' +
         seats.map(s => '<span class="seat">' + s + "</span>").join(" · ") +
         " (+1 entry each!)</span>";
     }
   } catch (err){
-    document.getElementById("bonus-banner").innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Seats: TBC</span>';
+    document.getElementById("bonus-banner").innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: TBC</span>';
   }
 }
 
