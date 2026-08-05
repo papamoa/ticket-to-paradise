@@ -782,14 +782,18 @@ async function fetchBonusSeats(){
 
     const el = document.getElementById("bonus-banner");
     if (!seats.length){
-      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: TBC</span>';
+      el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: ' +
+        '<span class="seat">Danica Hape</span> · <span class="seat">Simon Van Arkel</span> · <span class="seat">Linsay Lodetti</span>' +
+        " (+1 entry each!)</span>";
     } else {
       el.innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: ' +
         seats.map(s => '<span class="seat">' + s + "</span>").join(" · ") +
         " (+1 entry each!)</span>";
     }
   } catch (err){
-    document.getElementById("bonus-banner").innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: TBC</span>';
+    document.getElementById("bonus-banner").innerHTML = '<span class="ticker-track">🎟️ This Week\'s Bonus Entries: ' +
+      '<span class="seat">Danica Hape</span> · <span class="seat">Simon Van Arkel</span> · <span class="seat">Linsay Lodetti</span>' +
+      " (+1 entry each!)</span>";
   }
 }
 
