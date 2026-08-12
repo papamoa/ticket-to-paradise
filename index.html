@@ -405,7 +405,7 @@
     letter-spacing: 3px;
     color: var(--white);
     text-transform: uppercase;
-    margin: 8px 0 2px;
+    margin: 8px0 2px;
   }
   .lock-title{
     font-family:'Archivo Black', sans-serif;
@@ -656,7 +656,7 @@ function statusFor(entryCount){
   const isSunday = new Date().getDay() === 0;
   if (isSunday) return {label:"Boarding", cls:"status-boarding"};
   if (entryCount >= QUALIFY_THRESHOLD) return {label:"Qualified", cls:"status-qualified"};
-  if (entryCount < 5) return {label:"Gate Closing Soon", cls:"status-closing"};
+  if (entryCount < 5) return {label:"Gate Closing", cls:"status-closing"};
   return {label:"Final Call", cls:"status-open"};
 }
 
