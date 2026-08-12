@@ -315,6 +315,7 @@
   .status-boarding{ background: rgba(63,174,125,0.15); color: var(--go); border: 1px solid rgba(63,174,125,0.4); }
   .status-qualified{ background: rgba(252,227,0,0.15); color: var(--amber); border: 1px solid rgba(252,227,0,0.4); }
   .status-open{ background: rgba(63,174,125,0.08); color: #8fcaa8; border: 1px solid rgba(63,174,125,0.25); }
+  .status-closing{ background: rgba(193,67,44,0.15); color: var(--alert); border: 1px solid rgba(193,67,44,0.4); }
 
   .footer-bar{
     display:flex;
@@ -655,6 +656,7 @@ function statusFor(entryCount){
   const isSunday = new Date().getDay() === 0;
   if (isSunday) return {label:"Boarding", cls:"status-boarding"};
   if (entryCount >= QUALIFY_THRESHOLD) return {label:"Qualified", cls:"status-qualified"};
+  if (entryCount < 5) return {label:"Gate Closing Soon", cls:"status-closing"};
   return {label:"Final Call", cls:"status-open"};
 }
 
